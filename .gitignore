@@ -7,3 +7,4 @@ blib/
 .releaserc
 cover_db
 MYMETA.*
+/Perlmonks-Maintenance-*
