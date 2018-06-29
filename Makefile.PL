@@ -53,6 +53,10 @@ my %module = (
         'LWP::UserAgent'           => 0,
         'LWP::Protocol::https'     => 0,
         'Class::Method::Modifiers' => 0,
+
+        'Crypt::LE'                => 0, # for (re)generating the LE SSL certificates
+        # also, you will need to clone https://github.com/Corion/Crypt-LE-Challenge-External
+        # for regenerating the LE SSL certificates
     },
     TEST_REQUIRES => {
         'Test::More'   => 0,

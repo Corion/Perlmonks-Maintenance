@@ -20,6 +20,7 @@ no_index:
     - inc
 requires:
   Class::Method::Modifiers: '0'
+  Crypt::LE: '0'
   Data::Dump: '0'
   Exporter: '5'
   File::Spec: '0'
