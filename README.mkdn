@@ -1,0 +1,18 @@
+
+[![Travis Build Status](https://travis-ci.org/Corion/Perlmonks-Maintenance.svg?branch=master)](https://travis-ci.org/Corion/Perlmonks-Maintenance)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/Corion/Perlmonks-Maintenance?branch=master&svg=true)](https://ci.appveyor.com/project/Corion/Perlmonks-Maintenance)
+
+
+# NAME
+
+Perlmonks::Maintenance - maintenance scripts for perlmonks.org
+
+# PURPOSE
+
+The scripts in this repository are scripts for checking the health and sanity
+of webservers.
+
+Likely, more scripts will be added to this repository.
+
+Ideally, also some modules for accessing Perlmonks and/or maintaining
+credentials can be added to this repository.
