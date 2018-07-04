@@ -35,7 +35,7 @@ my $DNS = { # As of 2018-06-17:
   "www.perlmonks.net"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
   "www.perlmonks.org"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
 };
-if (0) {
+if (1) {
 	$DNS={};
 	my $resolver = new Net::DNS::Resolver(recurse => 1, debug => 0);
 	for my $addr (@ADDRS) {
@@ -44,7 +44,9 @@ if (0) {
 		my $packet = $resolver->send($addr, 'SOA');
 		my @server = map {$_->mname} grep {$_->type eq 'SOA'}
 			$packet->answer;
-		die "@server" unless @server==1;
+		unless (@server==1)
+			{ warn "Didn't find exactly one SOA record for $addr"
+				." (@server)"; next }
 		$packet = $resolver->send($server[0], 'A');
 		my @nameservers = map {$_->address} grep {$_->type eq 'A'}
 			$packet->answer;
@@ -90,8 +92,8 @@ for my $addr (sort keys %$DNS) {
 		local $force_peeraddr = $host;
 		my $res = $ua->get("https://$addr");
 		die $res->status_line unless $res->is_success;
-        $res->content =~ /\bmonktainer\b/
-            or warn "Didn't get a Perlmonks site from $host as $addr";
+		$res->content =~ /\bmonktainer\b/
+			or warn "Didn't get a Perlmonks site from $host as $addr";
 		my @peer = $res->header("client-peer");
 		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
 		my @issuer = $res->header("client-ssl-cert-issuer");
