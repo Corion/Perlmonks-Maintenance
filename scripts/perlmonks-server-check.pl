@@ -90,8 +90,8 @@ for my $addr (sort keys %$DNS) {
 		local $force_peeraddr = $host;
 		my $res = $ua->get("https://$addr");
 		die $res->status_line unless $res->is_success;
-        $res->content =~ /\bmonktainer\b/
-            or warn "Didn't get a Perlmonks site from $host as $addr";
+		$res->content =~ /\bmonktainer\b/
+			or warn "Didn't get a Perlmonks site from $host as $addr";
 		my @peer = $res->header("client-peer");
 		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
 		my @issuer = $res->header("client-ssl-cert-issuer");
