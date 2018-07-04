@@ -44,7 +44,9 @@ if (0) {
 		my $packet = $resolver->send($addr, 'SOA');
 		my @server = map {$_->mname} grep {$_->type eq 'SOA'}
 			$packet->answer;
-		die "@server" unless @server==1;
+		unless (@server==1)
+			{ warn "Didn't find exactly one SOA record for $addr"
+				." (@server)"; next }
 		$packet = $resolver->send($server[0], 'A');
 		my @nameservers = map {$_->address} grep {$_->type eq 'A'}
 			$packet->answer;
