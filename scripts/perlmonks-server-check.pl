@@ -35,7 +35,7 @@ my $DNS = { # As of 2018-06-17:
   "www.perlmonks.net"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
   "www.perlmonks.org"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
 };
-if (0) {
+if (1) {
 	$DNS={};
 	my $resolver = new Net::DNS::Resolver(recurse => 1, debug => 0);
 	for my $addr (@ADDRS) {
