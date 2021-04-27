@@ -8,3 +8,4 @@ blib/
 cover_db
 MYMETA.*
 /Perlmonks-Maintenance-*
+*.yaml
