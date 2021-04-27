@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Log::Log4perl ':easy';
 use WWW::Mechanize;
-use LWP::ConsoleLogger::Everywhere ();
+#use LWP::ConsoleLogger::Everywhere ();
 use YAML 'LoadFile';
 use Getopt::Long;
 
