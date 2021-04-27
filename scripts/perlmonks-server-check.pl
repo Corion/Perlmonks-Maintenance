@@ -21,19 +21,19 @@ my @ADDRS = qw/
 	perlmonks.org www.perlmonks.org css.perlmonks.org
 	perlmonks.com www.perlmonks.com css.perlmonks.com
 	perlmonks.net www.perlmonks.net css.perlmonks.net
-	perlmonks.pairsite.com /;
+	/;
 
-my $DNS = { # As of 2018-06-17:
-  "css.perlmonks.com"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "css.perlmonks.net"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "css.perlmonks.org"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "perlmonks.com"          => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "perlmonks.net"          => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "perlmonks.org"          => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "perlmonks.pairsite.com" => ["209.197.123.153"],
-  "www.perlmonks.com"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "www.perlmonks.net"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
-  "www.perlmonks.org"      => ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+my $DNS = { # As of 2018-07-25:
+  "css.perlmonks.com"      => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "css.perlmonks.net"      => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "css.perlmonks.org"      => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "perlmonks.com"          => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "perlmonks.net"          => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "perlmonks.org"          => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  #"perlmonks.pairsite.com" => [],
+  "www.perlmonks.com"      => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "www.perlmonks.net"      => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
+  "www.perlmonks.org"      => ["216.92.34.251", "66.39.54.27","209.197.123.153"],
 };
 if (1) {
 	$DNS={};
@@ -91,7 +91,7 @@ for my $addr (sort keys %$DNS) {
 		warn "Requesting $addr from $host...\n";
 		local $force_peeraddr = $host;
 		my $res = $ua->get("https://$addr");
-		die $res->status_line unless $res->is_success;
+		die "Host: $host: " . $res->status_line unless $res->is_success;
 		$res->content =~ /\bmonktainer\b/
 			or warn "Didn't get a Perlmonks site from $host as $addr";
 		my @peer = $res->header("client-peer");
