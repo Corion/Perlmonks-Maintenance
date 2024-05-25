@@ -91,9 +91,18 @@ for my $addr (sort keys %$DNS) {
 		warn "Requesting $addr from $host...\n";
 		local $force_peeraddr = $host;
 		my $res = $ua->get("https://$addr");
-		die "Host: $host: " . $res->status_line unless $res->is_success;
-		$res->content =~ /\bmonktainer\b/
-			or warn "Didn't get a Perlmonks site from $host as $addr";
+                if( ! $res->is_success ) {
+		    warn "Host: $host: " . $res->status_line unless $res->is_success;
+                } elsif( $res->content !~ /\bNODE\.title\b/ ) {
+                    my $title;
+                    if( $res->content =~ m!<title>\s*(.*?)\s*</title>!si ) {
+                        $title = $1;
+                    } else {
+                        $title = substr( $res->content, 100 );
+                    };
+		    warn "Didn't get a Perlmonks site from $host as $addr ('$title')";
+                    #warn $res->content;
+                };
 		my @peer = $res->header("client-peer");
 		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
 		my @issuer = $res->header("client-ssl-cert-issuer");
