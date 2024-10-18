@@ -60,7 +60,7 @@ if (1) {
 			"(\@$server[0]/@nameservers)", join ' ', @ips;
 		$DNS->{$addr} = \@ips;
 	}
-	dd $DNS;
+	#dd $DNS;
 }
 
 our $force_peeraddr;
