@@ -84,6 +84,13 @@ around 'LWP::Protocol::https::_get_sock_info' => sub {
 	$orig->(@_);
 };
 
+our $last_status;
+sub status {
+    print "\r" . (" "x length $last_status);
+    $last_status = "@_";
+    print "\r$last_status";
+}
+
 my %certs;
 my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
 for my $addr (sort keys %$DNS) {
