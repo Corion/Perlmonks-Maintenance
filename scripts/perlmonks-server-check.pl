@@ -84,6 +84,9 @@ around 'LWP::Protocol::https::_get_sock_info' => sub {
 	$orig->(@_);
 };
 
+our @params = ('node=Newest+Nodes', '');
+our @paths = ('/', '/index.pl');
+
 our $last_status;
 sub status {
     print "\r" . (" "x length $last_status);
@@ -94,13 +97,18 @@ sub status {
 my %certs;
 my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
 for my $addr (sort keys %$DNS) {
-	for my $host (sort @{ $DNS->{$addr} }) {
-		warn "Requesting $addr from $host...\n";
+    local $| = 1;
+    for my $host (sort @{ $DNS->{$addr} }) {
+	status( "Requesting $addr from $host...");
+        for my $path (@paths) {
+            for my $param (@params) {
+		my $url = "https://$addr$path?$param";
+	        status( "Requesting $url from $host...");
 		local $force_peeraddr = $host;
-		my $res = $ua->get("https://$addr");
+		my $res = $ua->get($url);
                 if( ! $res->is_success ) {
 		    warn "Host: $host: " . $res->status_line unless $res->is_success;
-                } elsif( $res->content !~ /\bNODE\.title\b/ ) {
+                } elsif( $res->content !~ /\bNODE\.title\b\s*=\s*([^\r\n]+)/ ) {
                     my $title;
                     if( $res->content =~ m!<title>\s*(.*?)\s*</title>!si ) {
                         $title = $1;
@@ -109,6 +117,8 @@ for my $addr (sort keys %$DNS) {
                     };
 		    warn "Didn't get a Perlmonks site from $host as $addr ('$title')";
                     #warn $res->content;
+                } else {
+	            status( "Requested $url from $host ($1)");
                 };
 		my @peer = $res->header("client-peer");
 		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
@@ -117,12 +127,14 @@ for my $addr (sort keys %$DNS) {
 		my @san = $res->header("client-ssl-cert-subjectaltname");
 		my $certstr = "Issuer: @issuer\nSubject: @subject\n"
 			."Subject Alt Names: @san\n";
-		push @{ $certs{$certstr} }, "$host $addr";
+		$certs{$certstr}->{"$host $addr"} = 1;
+            }
 	}
+    }
 }
 for my $cert (sort keys %certs) {
 	print "##### Certificate #####\n", $cert, "### Served by:\n";
-	printf "%15s %s\n", @$_ for map {[split]} @{ $certs{$cert} };
+	printf "%15s %s\n", @$_ for map {[split]} sort keys $certs{$cert}->%*;
 }
 
 =head1 AUTHOR
