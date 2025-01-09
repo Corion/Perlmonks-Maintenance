@@ -116,7 +116,7 @@ for my $addr (sort keys %$DNS) {
         for my $path (@paths) {
             for my $param (@params) {
 		my $url = "https://$addr$path?$param";
-		my $key = "$url\0$addr";
+		my $key = "$url\0$host";
 	        status( "Requesting $url from $host...");
 		local $force_peeraddr = $host;
 		my $res = $ua->get($url);
