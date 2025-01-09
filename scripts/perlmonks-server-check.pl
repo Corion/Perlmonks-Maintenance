@@ -102,6 +102,7 @@ sub status {
 }
 
 my %certs;
+my %server_status;
 my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
 for my $addr (sort keys %$DNS) {
     local $| = 1;
@@ -114,7 +115,8 @@ for my $addr (sort keys %$DNS) {
 		local $force_peeraddr = $host;
 		my $res = $ua->get($url);
                 if( ! $res->is_success ) {
-		    warn "Host: $host: " . $res->status_line unless $res->is_success;
+		    $server_status{ $url } = $res->status_line;
+		    warn "Host: $host: " . $res->status_line;
                 } elsif( $res->content !~ /\bNODE\.title\b\s*=\s*([^\r\n]+)/ ) {
                     my $title;
                     if( $res->content =~ m!<title>\s*(.*?)\s*</title>!si ) {
@@ -122,10 +124,12 @@ for my $addr (sort keys %$DNS) {
                     } else {
                         $title = substr( $res->content, 100 );
                     };
+		    $server_status{ $url } = "Didn't get a Perlmonks site from $host as $addr ('$title')";
 		    warn "Didn't get a Perlmonks site from $host as $addr ('$title')";
                     #warn $res->content;
                 } else {
 	            status( "Requested $url from $host ($1)");
+		    $server_status{ $url } = 'OK';
                 };
 		my @peer = $res->header("client-peer");
 		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
@@ -139,6 +143,13 @@ for my $addr (sort keys %$DNS) {
 	}
     }
 }
+status( "");
+
+for my $url (sort keys %server_status) {
+    my $vis = $server_status{ $url };
+    print sprintf "%-64s - %s\n", $url, $vis;
+}
+
 for my $cert (sort keys %certs) {
 	print "##### Certificate #####\n", $cert, "### Served by:\n";
 	printf "%15s %s\n", @$_ for map {[split]} sort keys $certs{$cert}->%*;
