@@ -64,8 +64,10 @@ if (1) {
 		$packet = $resolver->send($addr, 'A');
 		my @ips = sort map {$_->address} grep {$_->type eq 'A'}
 			$packet->answer;
-		printf "%23s %-35s %s\n", $addr,
-			"(\@$server[0]/@nameservers)", join ' ', @ips;
+		if( ! $quiet) {
+        		printf "%23s %-35s %s\n", $addr,
+        			"(\@$server[0]/@nameservers)", join ' ', @ips;
+		};
 		$DNS->{$addr} = \@ips;
 	}
 	#dd $DNS;
