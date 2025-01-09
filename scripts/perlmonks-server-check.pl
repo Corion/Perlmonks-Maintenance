@@ -8,6 +8,7 @@ require LWP::Protocol::https; # make sure this is installed
 use Class::Method::Modifiers qw/around/;
 use Getopt::Long;
 use POSIX 'strftime';
+use Time::HiRes 'time';
 
 =head1 NAME
 
@@ -108,6 +109,7 @@ sub status {
 
 my %certs;
 my %server_status;
+my %time_taken;
 my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
 for my $addr (sort keys %$DNS) {
     local $| = 1;
@@ -119,7 +121,9 @@ for my $addr (sort keys %$DNS) {
 		my $key = "$url\0$host";
 	        status( "Requesting $url from $host...");
 		local $force_peeraddr = $host;
+		my $start_time = time;
 		my $res = $ua->get($url);
+		$time_taken{ $key } = time - $start_time;
                 if( ! $res->is_success ) {
 		    $server_status{ $key } = $res->status_line;
 		    warn "Host: $host: " . $res->status_line;
@@ -154,8 +158,8 @@ status( "" );
 if( $format eq 'text' ) {
     for my $key (sort keys %server_status) {
         my ($url, $addr) = split /\0/, $key;
-        my $vis = "$server_status{ $key } ($addr)";
-        print sprintf "%-64s - %s\n", $url, $vis;
+        print sprintf "%-64s - %-16s - %s (%.2fs)\n",
+	              $url, $addr, $server_status{ $key }, $time_taken{$key};
     }
 
     for my $cert (sort keys %certs) {
@@ -179,7 +183,8 @@ HTML
 
     for my $key (sort keys %server_status) {
         my ($url, $addr) = split /\0/, $key;
-        print sprintf '<tr><td><a href="%s">%s</a> (%s)</td><td>%s</td></tr>', $url, $url, $addr, $server_status{ $key };
+        print sprintf '<tr><td><a href="%s">%s</a></td><td>%s</td><td>%.2f</td><td>%s</td></tr>',
+	                         $url, $url, $addr, $time_taken{ $key }, $server_status{ $key };
     }
 
     print <<HTML;
