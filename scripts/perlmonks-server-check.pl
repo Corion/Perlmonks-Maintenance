@@ -110,7 +110,7 @@ sub status {
 my %certs;
 my %server_status;
 my %time_taken;
-my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
+my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 }, timeout => 60 );
 for my $addr (sort keys %$DNS) {
     local $| = 1;
     for my $host (sort @{ $DNS->{$addr} }) {
