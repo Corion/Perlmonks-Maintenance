@@ -154,7 +154,7 @@ status( "" );
 if( $format eq 'text' ) {
     for my $key (sort keys %server_status) {
         my ($url, $addr) = split /\0/, $key;
-        my $vis = "$server_status{ $url } ($addr)";
+        my $vis = "$server_status{ $key } ($addr)";
         print sprintf "%-64s - %s\n", $url, $vis;
     }
 
