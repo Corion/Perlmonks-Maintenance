@@ -7,6 +7,7 @@ use LWP::UserAgent;
 require LWP::Protocol::https; # make sure this is installed
 use Class::Method::Modifiers qw/around/;
 use Getopt::Long;
+use POSIX 'strftime';
 
 =head1 NAME
 
@@ -20,7 +21,9 @@ Lists all SSL certificates that the different webservers serve
 
 GetOptions(
     'q|quiet' => \my $quiet,
+    'format=s' => \my $format,
 );
+$format //= 'text';
 
 my @ADDRS = qw/
 	perlmonks.org www.perlmonks.org css.perlmonks.org
@@ -143,16 +146,42 @@ for my $addr (sort keys %$DNS) {
 	}
     }
 }
-status( "");
+status( "" );
 
-for my $url (sort keys %server_status) {
-    my $vis = $server_status{ $url };
-    print sprintf "%-64s - %s\n", $url, $vis;
-}
+if( $format eq 'text' ) {
+    for my $url (sort keys %server_status) {
+        my $vis = $server_status{ $url };
+        print sprintf "%-64s - %s\n", $url, $vis;
+    }
 
-for my $cert (sort keys %certs) {
-	print "##### Certificate #####\n", $cert, "### Served by:\n";
-	printf "%15s %s\n", @$_ for map {[split]} sort keys $certs{$cert}->%*;
+    for my $cert (sort keys %certs) {
+    	print "##### Certificate #####\n", $cert, "### Served by:\n";
+    	printf "%15s %s\n", @$_ for map {[split]} sort keys $certs{$cert}->%*;
+    }
+} elsif( $format eq 'html' ) {
+    my $updated = strftime '%Y-%m-%dT%H:%M:%SZ', gmtime;
+    binmode STDOUT, ':encoding(UTF-8)';
+    print <<HTML;
+<!DOCTYPE html>
+<html>
+<head>
+<title>Perlmonks server health</title>
+</head>
+<body>
+<h1>Perlmonks server health</h1>
+<small>Updated: $updated</small>
+<table>
+HTML
+
+    for my $url (sort keys %server_status) {
+        print sprintf '<tr><td>%s</td><td>%s</td></tr>', $url, $server_status{ $url };
+    }
+
+    print <<HTML;
+</table>
+</body>
+</html>
+HTML
 }
 
 =head1 AUTHOR
