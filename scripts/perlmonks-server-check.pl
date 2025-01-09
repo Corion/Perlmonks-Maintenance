@@ -184,6 +184,9 @@ HTML
 
     print <<HTML;
 </table>
+<footer>
+Created by <a href="https://github.com/Corion/Perlmonks-Maintenance">perlmonks-server-check.pl</a>
+</footer>
 </body>
 </html>
 HTML
