@@ -23,6 +23,7 @@ Lists all SSL certificates that the different webservers serve
 GetOptions(
     'q|quiet' => \my $quiet,
     'format=s' => \my $format,
+    'o|output-file=s' => \my $output_file,
 );
 $format //= 'text';
 
@@ -154,6 +155,10 @@ for my $addr (sort keys %$DNS) {
     }
 }
 status( "" );
+
+if( $output_file ) {
+    open STDOUT, '>', $output_file;
+}
 
 if( $format eq 'text' ) {
     for my $key (sort keys %server_status) {
