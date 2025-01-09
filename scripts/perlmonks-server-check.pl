@@ -6,6 +6,7 @@ use Net::DNS;
 use LWP::UserAgent;
 require LWP::Protocol::https; # make sure this is installed
 use Class::Method::Modifiers qw/around/;
+use Getopt::Long;
 
 =head1 NAME
 
@@ -16,6 +17,10 @@ perlmonks-server-check.pl
 Lists all SSL certificates that the different webservers serve
 
 =cut
+
+GetOptions(
+    'q|quiet' => \my $quiet,
+);
 
 my @ADDRS = qw/
 	perlmonks.org www.perlmonks.org css.perlmonks.org
@@ -87,11 +92,13 @@ around 'LWP::Protocol::https::_get_sock_info' => sub {
 our @params = ('node=Newest+Nodes', '');
 our @paths = ('/', '/index.pl');
 
-our $last_status;
+our $last_status = '';
 sub status {
-    print "\r" . (" "x length $last_status);
-    $last_status = "@_";
-    print "\r$last_status";
+    if( ! $quiet) {
+        print "\r" . (" "x length $last_status);
+        $last_status = "@_";
+        print "\r$last_status";
+    }
 }
 
 my %certs;
