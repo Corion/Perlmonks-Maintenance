@@ -114,11 +114,12 @@ for my $addr (sort keys %$DNS) {
         for my $path (@paths) {
             for my $param (@params) {
 		my $url = "https://$addr$path?$param";
+		my $key = "$url\0$addr";
 	        status( "Requesting $url from $host...");
 		local $force_peeraddr = $host;
 		my $res = $ua->get($url);
                 if( ! $res->is_success ) {
-		    $server_status{ $url } = $res->status_line;
+		    $server_status{ $key } = $res->status_line;
 		    warn "Host: $host: " . $res->status_line;
                 } elsif( $res->content !~ /\bNODE\.title\b\s*=\s*([^\r\n]+)/ ) {
                     my $title;
@@ -127,12 +128,12 @@ for my $addr (sort keys %$DNS) {
                     } else {
                         $title = substr( $res->content, 100 );
                     };
-		    $server_status{ $url } = "Didn't get a Perlmonks site from $host as $addr ('$title')";
+		    $server_status{ $key } = "Didn't get a Perlmonks site from $host as $addr ('$title')";
 		    warn "Didn't get a Perlmonks site from $host as $addr ('$title')";
                     #warn $res->content;
                 } else {
 	            status( "Requested $url from $host ($1)");
-		    $server_status{ $url } = 'OK';
+		    $server_status{ $key } = 'OK';
                 };
 		my @peer = $res->header("client-peer");
 		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
@@ -149,8 +150,9 @@ for my $addr (sort keys %$DNS) {
 status( "" );
 
 if( $format eq 'text' ) {
-    for my $url (sort keys %server_status) {
-        my $vis = $server_status{ $url };
+    for my $key (sort keys %server_status) {
+        my ($url, $addr) = split /\0/, $key;
+        my $vis = "$server_status{ $url } ($addr)";
         print sprintf "%-64s - %s\n", $url, $vis;
     }
 
@@ -173,8 +175,9 @@ if( $format eq 'text' ) {
 <table>
 HTML
 
-    for my $url (sort keys %server_status) {
-        print sprintf '<tr><td>%s</td><td>%s</td></tr>', $url, $server_status{ $url };
+    for my $key (sort keys %server_status) {
+        my ($url, $addr) = split /\0/, $key;
+        print sprintf '<tr><td><a href="%s">%s</a> (%s)</td><td>%s</td></tr>', $url, $url, $addr, $server_status{ $key };
     }
 
     print <<HTML;
