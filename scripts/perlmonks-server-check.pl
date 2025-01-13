@@ -198,7 +198,7 @@ HTML
     for my $key (sort keys %server_status) {
         my ($url, $addr) = split /\0/, $key;
         print sprintf '<tr><td><a href="%s">%s</a></td><td>%s</td><td>%.2f s</td><td>%s</td></tr>',
-                                 $url, $url, $addr, $time_taken{ $key }, $server_status{ $key };
+                                 $url, $url, $addr, $time_taken{ $key } // '?', $server_status{ $key };
     }
 
     print <<HTML;
