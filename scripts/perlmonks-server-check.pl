@@ -133,7 +133,7 @@ for my $addr (sort keys %$DNS) {
                         $server_status{ $key } = $res->status_line;
                         warn "Host: $host: " . $res->status_line
                             if ! $quiet;
-                        if( $res->status_line =~ /Can't connect to /i ) {
+                        if( $res->status_line =~ /\A500 Can't connect to /i ) {
                             $unreachable{ $host } = $res->status_line;
                         };
                     } elsif( $res->content !~ /\bNODE\.title\b\s*=\s*([^\r\n]+)/ ) {
@@ -198,7 +198,7 @@ HTML
     for my $key (sort keys %server_status) {
         my ($url, $addr) = split /\0/, $key;
         print sprintf '<tr><td><a href="%s">%s</a></td><td>%s</td><td>%.2f s</td><td>%s</td></tr>',
-                                 $url, $url, $addr, $time_taken{ $key } // '?', $server_status{ $key };
+                                 $url, $url, $addr, $time_taken{ $key } // -1, $server_status{ $key };
     }
 
     print <<HTML;
