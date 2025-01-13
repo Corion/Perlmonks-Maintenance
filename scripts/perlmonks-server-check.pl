@@ -127,7 +127,8 @@ for my $addr (sort keys %$DNS) {
 		$time_taken{ $key } = time - $start_time;
                 if( ! $res->is_success ) {
 		    $server_status{ $key } = $res->status_line;
-		    warn "Host: $host: " . $res->status_line;
+		    warn "Host: $host: " . $res->status_line
+		        if ! $quiet;
                 } elsif( $res->content !~ /\bNODE\.title\b\s*=\s*([^\r\n]+)/ ) {
                     my $title;
                     if( $res->content =~ m!<title>\s*(.*?)\s*</title>!si ) {
@@ -141,15 +142,15 @@ for my $addr (sort keys %$DNS) {
                 } else {
 	            status( "Requested $url from $host ($1)");
 		    $server_status{ $key } = 'OK';
+		    my @peer = $res->header("client-peer");
+		    die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
+		    my @issuer = $res->header("client-ssl-cert-issuer");
+		    my @subject = $res->header("client-ssl-cert-subject");
+		    my @san = $res->header("client-ssl-cert-subjectaltname");
+		    my $certstr = "Issuer: @issuer\nSubject: @subject\n"
+		      ."Subject Alt Names: @san\n";
+		    $certs{$certstr}->{"$host $addr"} = 1;
                 };
-		my @peer = $res->header("client-peer");
-		die "@peer" unless @peer==1 && $peer[0] eq "$host:443";
-		my @issuer = $res->header("client-ssl-cert-issuer");
-		my @subject = $res->header("client-ssl-cert-subject");
-		my @san = $res->header("client-ssl-cert-subjectaltname");
-		my $certstr = "Issuer: @issuer\nSubject: @subject\n"
-			."Subject Alt Names: @san\n";
-		$certs{$certstr}->{"$host $addr"} = 1;
             }
 	}
     }
