@@ -28,25 +28,15 @@ GetOptions(
 $format //= 'text';
 
 my @ADDRS = qw/
-        perlmonks.org www.perlmonks.org css.perlmonks.org
-        perlmonks.com www.perlmonks.com css.perlmonks.com
-        perlmonks.net www.perlmonks.net css.perlmonks.net
+        perlmonks.org www.perlmonks.org
         /;
+#         css.perlmonks.org
+#        perlmonks.com www.perlmonks.com css.perlmonks.com
+#        perlmonks.net www.perlmonks.net css.perlmonks.net
 
-my $DNS = { # As of 2018-07-25:
-  "css.perlmonks.com"      => ["216.92.34.251", "66.39.54.27"],
-  "css.perlmonks.net"      => ["216.92.34.251", "66.39.54.27"],
-  "css.perlmonks.org"      => ["216.92.34.251", "66.39.54.27"],
-  "perlmonks.com"          => ["216.92.34.251", "66.39.54.27"],
-  "perlmonks.net"          => ["216.92.34.251", "66.39.54.27"],
-  "perlmonks.org"          => ["216.92.34.251", "66.39.54.27"],
-  #"perlmonks.pairsite.com" => [],
-  "www.perlmonks.com"      => ["216.92.34.251", "66.39.54.27"],
-  "www.perlmonks.net"      => ["216.92.34.251", "66.39.54.27"],
-  "www.perlmonks.org"      => ["216.92.34.251", "66.39.54.27"],
-};
-if (1) {
-        $DNS={};
+my $DNS = {};
+
+if(0) {
         my $resolver = new Net::DNS::Resolver(recurse => 1, debug => 0);
         for my $addr (@ADDRS) {
                 # figure out the authoritative server
@@ -74,6 +64,9 @@ if (1) {
         }
         #dd $DNS;
 }
+push $DNS->{'perlmonks.org'}->@*, "151.101.1.242";
+push $DNS->{'www.perlmonks.org'}->@*, "151.101.1.242";
+push $DNS->{'css.perlmonks.org'}->@*, "151.101.1.242";
 
 our $force_peeraddr;
 around 'LWP::Protocol::http::_extra_sock_opts' => sub {
@@ -88,6 +81,7 @@ around 'LWP::Protocol::https::_get_sock_info' => sub {
         my ($self, $res, $sock) = @_;
         my $cert = $sock->get_peer_certificate;
         my @san = $cert->peer_certificate('subjectAltNames');
+        use Data::Dumper; warn Dumper \@san;
         while (@san) {
                 my ($type_id, $value) = splice @san, 0, 2;
                 $res->push_header("Client-SSL-Cert-SubjectAltName"
@@ -127,24 +121,33 @@ for my $addr (sort keys %$DNS) {
                     status( "Requesting $url from $host...");
                     local $force_peeraddr = $host;
                     my $start_time = time;
-                    my $res = $ua->get($url);
+                    use HTTP::Request;
+                    my $req = HTTP::Request->new(
+                        GET => $url,
+                        [ Host => $addr ],
+                    );
+                    warn "\n".$req->as_string;
+                    my $res = $ua->request( $req );
                     $time_taken{ $key } = time - $start_time;
                     if( ! $res->is_success ) {
                         $server_status{ $key } = $res->status_line;
                         warn "Host: $host: " . $res->status_line
                             if ! $quiet;
+                        warn $res->content;
                         if( $res->status_line =~ /\A500 Can't connect to /i ) {
                             $unreachable{ $host } = $res->status_line;
                         };
                     } elsif( $res->content !~ /\bNODE\.title\b\s*=\s*([^\r\n]+)/ ) {
                         my $title;
                         if( $res->content =~ m!<title>\s*(.*?)\s*</title>!si ) {
-                            $title = $1;
-                        } else {
+                            $title = qq{'$1'};
+                        } elsif( length $res->content ) {
                             $title = substr( $res->content, 100 );
+                        } else {
+                            $title = '<no title>';
                         };
-                        $server_status{ $key } = "Didn't get a Perlmonks site from $host as $addr ('$title')";
-                        warn "Didn't get a Perlmonks site from $host as $addr ('$title')";
+                        $server_status{ $key } = "Didn't get a Perlmonks site from $host as $addr ($title)";
+                        warn "Didn't get a Perlmonks site from $host as $addr ($title)";
                         #warn $res->content;
                     } else {
                         status( "Requested $url from $host ($1)");
