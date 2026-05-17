@@ -3,6 +3,7 @@ use warnings;
 use strict;
 use Data::Dump;
 use Net::DNS;
+use IO::Socket::SSL;
 use LWP::UserAgent;
 require LWP::Protocol::https; # make sure this is installed
 use Class::Method::Modifiers qw/around/;
@@ -28,29 +29,33 @@ GetOptions(
 $format //= 'text';
 
 my @ADDRS = qw/
-        perlmonks.org www.perlmonks.org
+        perlmonks.org
         /;
+# The following all rewrite/redirect to perlmonks.org
+# www.perlmonks.org
 #         css.perlmonks.org
 #        perlmonks.com www.perlmonks.com css.perlmonks.com
 #        perlmonks.net www.perlmonks.net css.perlmonks.net
 
 my $DNS = {};
 
-if(0) {
         my $resolver = new Net::DNS::Resolver(recurse => 1, debug => 0);
         for my $addr (@ADDRS) {
                 # figure out the authoritative server
-                $resolver->nameservers('8.8.8.8');
+                #$resolver->nameservers('8.8.8.8');
                 my $packet = $resolver->send($addr, 'SOA');
                 my @server = map {$_->mname} grep {$_->type eq 'SOA'}
                         $packet->answer;
-                unless (@server==1)
-                        { warn "Didn't find exactly one SOA record for $addr"
-                                ." (@server)"; next }
+                #unless (@server==1)
+                #        { warn "Didn't find exactly one SOA record for $addr"
+                #                ." (@server)"; next }#
+                if( ! @server) {
+                    warn "No server for '$addr'";
+                }
                 $packet = $resolver->send($server[0], 'A');
                 my @nameservers = map {$_->address} grep {$_->type eq 'A'}
                         $packet->answer;
-                die "@server" unless @nameservers;
+                die "No nameserver IP addresses found for @server" unless @nameservers;
                 # query the authoritative server
                 $resolver->nameservers(@nameservers);
                 $packet = $resolver->send($addr, 'A');
@@ -63,10 +68,8 @@ if(0) {
                 $DNS->{$addr} = \@ips;
         }
         #dd $DNS;
-}
-push $DNS->{'perlmonks.org'}->@*, "151.101.1.242";
-push $DNS->{'www.perlmonks.org'}->@*, "151.101.1.242";
-push $DNS->{'css.perlmonks.org'}->@*, "151.101.1.242";
+# Hardcoded IP addresses for migration
+#push $DNS->{'perlmonks.org'}->@*, "151.101.1.242";
 
 our $force_peeraddr;
 around 'LWP::Protocol::http::_extra_sock_opts' => sub {
@@ -76,12 +79,13 @@ around 'LWP::Protocol::http::_extra_sock_opts' => sub {
         push @rv, PeerAddr => $force_peeraddr if defined $force_peeraddr;
         return @rv;
 };
+
+#local $IO::Socket::SSL::DEBUG=4;
 around 'LWP::Protocol::https::_get_sock_info' => sub {
         my $orig = shift;
         my ($self, $res, $sock) = @_;
         my $cert = $sock->get_peer_certificate;
         my @san = $cert->peer_certificate('subjectAltNames');
-        use Data::Dumper; warn Dumper \@san;
         while (@san) {
                 my ($type_id, $value) = splice @san, 0, 2;
                 $res->push_header("Client-SSL-Cert-SubjectAltName"
@@ -106,7 +110,13 @@ my %certs;
 my %server_status;
 my %time_taken;
 my %unreachable;
-my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 }, timeout => 60 );
+my $ua = LWP::UserAgent->new(
+    ssl_opts => {
+        verify_hostname => 0,
+        SSL_hostname => 'perlmonks.org', # for SNI
+    },
+    timeout => 60
+);
 for my $addr (sort keys %$DNS) {
     local $| = 1;
     for my $host (sort @{ $DNS->{$addr} }) {
@@ -126,14 +136,14 @@ for my $addr (sort keys %$DNS) {
                         GET => $url,
                         [ Host => $addr ],
                     );
-                    warn "\n".$req->as_string;
                     my $res = $ua->request( $req );
                     $time_taken{ $key } = time - $start_time;
                     if( ! $res->is_success ) {
                         $server_status{ $key } = $res->status_line;
-                        warn "Host: $host: " . $res->status_line
-                            if ! $quiet;
-                        warn $res->content;
+                        if( ! $quiet ) {;
+                            warn "Host: $host: " . $res->status_line;
+                            warn $res->content;
+                        };
                         if( $res->status_line =~ /\A500 Can't connect to /i ) {
                             $unreachable{ $host } = $res->status_line;
                         };
