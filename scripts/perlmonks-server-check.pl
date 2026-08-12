@@ -134,7 +134,7 @@ for my $addr (sort keys %$DNS) {
                     use HTTP::Request;
                     my $req = HTTP::Request->new(
                         GET => $url,
-                        [ Host => $addr ],
+                        [ Host => $addr, Cookie => 'userpass=dummy' ],
                     );
                     my $res = $ua->request( $req );
                     $time_taken{ $key } = time - $start_time;
