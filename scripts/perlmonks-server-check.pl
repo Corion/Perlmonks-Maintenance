@@ -94,7 +94,7 @@ around 'LWP::Protocol::https::_get_sock_info' => sub {
         $orig->(@_);
 };
 
-our @params = ('node=Newest+Nodes', '');
+our @params = ('node=Newest+Nodes', 'node_id=5348');
 our @paths = ('/', '/index.pl');
 
 our $last_status = '';
